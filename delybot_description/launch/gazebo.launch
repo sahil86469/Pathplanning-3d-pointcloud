@@ -1,0 +1,124 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<launch>
+  <arg name="rviz" default="true" />
+
+  <!-- These are the arguments you can pass this launch file, for example paused:=true -->
+  <arg name="paused" default="false" />
+  <arg name="use_sim_time" default="true" />
+  <arg name="gui" default="true" />
+  <arg name="headless" default="false" />
+  <arg name="debug" default="false" />
+  <arg name="model" default="$(find delybot_description)/urdf/delybot.urdf" />
+  <arg name="rvizconfig" default="$(find delybot_description)/rviz/urdf.rviz" />
+
+  <arg name="open_rviz" default="true"/>
+  <arg name="slam" default="false"/>
+  <arg name="sensor" default="velodyne"/>
+
+  <arg name="assembler_LiDAR_topicname" default="[/velodyne_points]"/>
+  <arg name="assemble_pc" default="true"/>
+  <arg name="fbm_icp_mapping" default="true"/>
+
+
+
+  <!-- We resume the logic in empty_world.launch, changing only the name of the world to be launched -->
+  <include file="$(find delybot_description)/launch/mazeworld.launch">
+  </include>
+  
+  <param name="robot_description" command="xacro '$(find delybot_description)/urdf/delybot.urdf.xacro'" />
+
+  <!-- push robot_description to factory and spawn robot in gazebo -->
+  <node name="urdf_spawner" pkg="gazebo_ros" type="spawn_model" args="-z 1.0 -unpause -urdf -model robot -param robot_description" respawn="false" output="screen" />
+
+  <node pkg="robot_state_publisher" type="robot_state_publisher" name="robot_state_publisher">
+    <param name="publish_frequency" type="double" value="30.0" />
+  </node>
+
+  <!-- <node name="rviz" pkg="rviz" type="rviz" args="-d $(arg rvizconfig)" required="true" /> -->
+  <!-- <include if="$(arg rviz)" file="$(find delybot_description)/launch/display.launch">
+    <arg name="robot_state_publisher" value="false" />
+  </include> -->
+
+  <rosparam command="load" file="$(find delybot_control)/config/delybot_control.yaml" />
+  <rosparam command="load" file="$(find delybot_control)/config/joint_state.yaml" />
+
+  <node name="controller_spawner" pkg="controller_manager" type="spawner" args="joint_state_controller
+        mobile_base_controller" />
+
+  <node name="rqt_robot_steering" pkg="rqt_robot_steering" type="rqt_robot_steering">
+    <param name="default_topic" value="/mobile_base_controller/cmd_vel" />
+  </node>
+
+  <!-- Robot localization-->
+  <node pkg="robot_localization" type="ekf_localization_node" name="ekf_delybot" clear_params="true">
+    <rosparam command="load" file="$(find delybot_control)/config/ekf.yaml" />
+    <remap from="odometry/filtered" to="odom" />
+  </node>
+  
+
+
+
+
+
+
+
+
+    <include file="$(find sgm_lidar_clustering)/launch/Cluster_node.launch"/>
+
+
+  <group if="$(arg slam)">
+    <arg name="scan_topic" default="fused_laser_scan" />
+    <include file="$(find gazebo_simulator)/launch/slam/robot_gmapping.launch">
+      <arg name="scan_topic" value="$(arg scan_topic)"/>
+    </include>
+  </group>
+
+  <!-- <include file="$(find gazebo_simulator)/launch/control/robot_control.launch"/> -->
+
+  <group if="$(arg assemble_pc)">
+    <include file="$(find point_cloud_assembler)/launch/assembler_node.launch">
+      <arg name="LiDAR_topicname" value="$(arg assembler_LiDAR_topicname)"/>
+    </include>
+  </group>
+  
+  
+  <group if="$(arg fbm_icp_mapping)">
+    <include file="$(find feature_based_mapping)/launch/fbm_icp.launch">
+      <arg name="LiDAR_topicname" value="$(arg assembler_LiDAR_topicname)"/>
+    </include>
+  </group>
+ 
+
+  <!--launch rviz-->
+  <group if="$(arg open_rviz)">
+    <node name="rviz" pkg="rviz" type="rviz" args="-d $(find gazebo_simulator)/rviz/sigmapilot_basic_config.rviz"/>
+  </group>
+  
+  
+  
+  <node pkg="pointcloud_to_laserscan" type="pointcloud_to_laserscan_node" name="pointcloud_to_laserscan">
+      <remap from="cloud_in" to="/velodyne_points"/>
+      <remap from="scan" to="/camera/scan" />
+      <rosparam>
+        target_frame: camera_link
+        transform_tolerance: 0.01
+        min_height: 0.0
+        max_height: 1.0
+        
+        angle_min: -1.5708
+        angle_max: 1.5708
+        angle_increment: 0.0087
+        scan_time: 0.3333
+        range_min: 0.45
+        range_max: 4.0
+        use_inf: true
+        
+        #concurrency_level affects number of pc queued for processing and the number of threadsused
+        # 0: Detect number of cores
+        # 1: Single threaded
+        # 2: inf : Parallelism level
+        concurrency_level: 1
+      </rosparam>
+    </node>
+
+</launch>
