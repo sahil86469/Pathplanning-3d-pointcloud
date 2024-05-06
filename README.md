@@ -2,7 +2,6 @@
 
 <br>
 <div align="center">
- <img src="https://github.com/gmeidk/DelyBot/blob/d6c620261c2f81553f9dc13830cff278a25ad252/MEDIA/robot.png?raw=true" alt="DelyBot" height="180" width="200"> 
 </div>
 <h3 align="center">DelyBot</h3>
 <p align="center">Ready to serve you anytime, anywhere.</p>
