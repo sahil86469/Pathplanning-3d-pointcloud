@@ -17,6 +17,9 @@ The robot is able to locate itself through knowledge of the global static map an
 <br>
 <div align="center">
  ![UGV_front](https://github.com/sahil86469/Pathplanning-3d-pointcloud/assets/158127073/0c3ed793-32e8-4add-b187-d06e8eaac4c9)
+ https://drive.google.com/file/d/1SnqSlZ4OhGHTy0fLlvHMX0O5h8qilEoG/view?usp=sharing
+ https://drive.google.com/file/d/1xxT2847O7ArTNyc4BDY6y_yG-QMtLj9j/view?usp=sharing
+ https://drive.google.com/file/d/1-aFbwC8MLoVVe3_I17Tsaj7_I7SX9o_v/view?usp=sharing
 </div>
 <br>
 DelyBot is composed of:
